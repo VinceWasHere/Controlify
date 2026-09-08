@@ -1,35 +1,47 @@
-# Controlify: Forgified
+# Controlify: Forgified — Radial x48
 
-A simple, and unofficial port of [Controlify](https://modrinth.com/mod/controlify), made for Forge 1.20.1.
+This is [**Vincent**](https://github.com/VinceWasHere)'s fork of [**EchoEllet's Controlify: Forgified**](https://github.com/EchoEllet/Controlify)
+(itself an unofficial backport of [**isXander**](https://github.com/isXander)'s [Controlify](https://github.com/isXander/Controlify)
+to Forge 1.20.1). The only thing this fork adds is a bigger, paginated radial menu — everything else is
+EchoEllet's port, unchanged.
 
-The goal is to make it "just work" without crashes or critical issues.
-The newer features, such as split-screen or data-driven button guides, are not included.
+## ⚠️ Made with AI assistance — read before installing
 
-This port is based on [v2.1.2 for Fabric 1.20.1](https://modrinth.com/mod/controlify/version/gYWWawgz), with manual
-backports of some changes from Controlify 2.4.2 and additional adjustments needed to make it work on MinecraftForge
-platform.
+This fork's patch was written by reverse-engineering the compiled mod and porting the result onto EchoEllet's
+source, with the help of [Claude Code](https://claude.com/claude-code). It has been tested by hand with a
+real and virtual gamepad, but it has **not** been reviewed by isXander or EchoEllet, and it is **not** an
+official release of either project. It may contain bugs that the manual testing missed. Use at your own risk,
+and please [open an issue on this fork](https://github.com/VinceWasHere/Controlify/issues) — not on EchoEllet's
+or isXander's repositories — if you run into problems with this specific patch.
 
-> **Note:** Unlike the official Controlify mod,  
-> this backport does **not** support on-screen Controlify data-driven button guides,  
-> as it is an unofficial backport of an older Controlify version.
+## 🔀 What this fork changes
 
-## 🔀 About This Fork
+- **48 radial slots instead of 8**, shown 12 at a time and paged with `LB`/`RB`
+  (`GUI_PREV_TAB`/`GUI_NEXT_TAB`, which already worked on any screen, so no new controller button was needed).
+- **Fixed a slot that could never actually be cleared** — the "empty" marker used to save a slot and the one
+  used to display it didn't match, and the edit menu never offered an "empty" option to begin with.
+- Old 8-slot configs are **migrated automatically** to the new 48-slot layout — no reconfiguration needed.
 
-Yes, this is a fork of a fork: [**isXander**](https://github.com/isXander) created and maintains the
-original [Controlify](https://github.com/isXander/Controlify) for Fabric/NeoForge, [**EchoEllet**](https://github.com/EchoEllet)
-built and maintains [**Controlify: Forgified**](https://github.com/EchoEllet/Controlify) (the Forge 1.20.1 backport
-this repo is forked from), and this fork adds one feature on top of EchoEllet's Forge 1.20.1 port:
+Source diff: [`radial-x48` branch](https://github.com/VinceWasHere/Controlify/tree/radial-x48).
+Ready-to-install build: [Releases](https://github.com/VinceWasHere/Controlify/releases).
 
-- **48-slot radial menu, paged 12 at a time with LB/RB** (instead of a hard 8-slot limit), using the
-  `GUI_NEXT_TAB`/`GUI_PREV_TAB` bindings, which already worked on any screen so no new controller button was needed.
-- **Fix for a slot that could never actually be cleared** — the "empty" marker used to save a slot and the one used
-  to display it didn't match, and the edit menu never offered an "empty" option to begin with.
-- Old 8-slot configs are migrated automatically to the new 48-slot layout, no reconfiguration needed.
+## 🏆 Credits
 
-Written by [**Vincent**](https://github.com/VinceWasHere), reverse-engineering the mod's radial menu with the
-assistance of [Claude Code](https://claude.com/claude-code), and offered back to isXander and EchoEllet in case it's
-useful upstream. See the [`radial-x48` branch](https://github.com/VinceWasHere/Controlify/tree/radial-x48) for the
-full patch, and [Releases](https://github.com/VinceWasHere/Controlify/releases) for a ready-to-install build.
+- [**isXander**](https://github.com/isXander) — created and maintains the
+  original [Controlify](https://github.com/isXander/Controlify). Without their work, none of this would exist.
+- [**EchoEllet**](https://github.com/EchoEllet) — built and maintains
+  [**Controlify: Forgified**](https://github.com/EchoEllet/Controlify), the Forge 1.20.1 backport this fork is
+  based on. All of the sections below this point describe EchoEllet's work, reproduced here because they still
+  apply unchanged to this build.
+- [**Vincent**](https://github.com/VinceWasHere) — wrote the radial x48 patch in this fork, with the
+  assistance of [Claude Code](https://claude.com/claude-code).
+- [**Jaycawn**](https://github.com/Jaycawn) — designed the mod logo
+  ([EchoEllet/Controlify#5](https://github.com/EchoEllet/Controlify/issues/5)).
+
+---
+
+The following sections are EchoEllet's, from [Controlify: Forgified](https://github.com/EchoEllet/Controlify),
+reproduced here because they describe the mod this fork is built on and still apply as-is.
 
 ## 📦 **Required Dependencies**
 
@@ -60,10 +72,10 @@ Some of the compatibilities were added recently.
 
 ## 🐞 Bug Reports
 
-This **is not an official port**, so any issues **should not be reported** to the original project.  
-Please [**submit them to this GitHub repository**](https://github.com/EchoEllet/Controlify/issues) instead.
-
-Note that we do **not** plan to add any features such as Controlify split-screen integration.
+For issues with the base Controlify: Forgified port, please use
+[EchoEllet's repository](https://github.com/EchoEllet/Controlify/issues) — not the original Controlify project.
+For issues specific to the radial x48 patch in this fork, use
+[this repository's issues](https://github.com/VinceWasHere/Controlify/issues) instead.
 
 ## 🧰 Maintenance
 
@@ -71,29 +83,13 @@ Many mods still target Forge 1.20.1. This port makes Controlify usable in those 
 though support will eventually end once most mods move to NeoForge.
 
 > We recommend starting to adapt to NeoForge or Fabric to avoid breakage, as Controlify only supports those platforms.
-> We did not focus much on code quality or work polish.  
-> That said, the port was not entirely straightforward and still required testing, effort, and time.
-
-## 🏆 Credits
-
-This project is an **unofficial backport** based on the original work by [**isXander**](https://github.com/isXander).  
-Without their valuable work, this port would not exist.
-
-The Forge 1.20.1 backport this repo is forked from is built and maintained
-by [**EchoEllet**](https://github.com/EchoEllet) at [EchoEllet/Controlify](https://github.com/EchoEllet/Controlify).
-
-The 48-slot paginated radial menu in this fork was written
-by [**Vincent**](https://github.com/VinceWasHere), with the assistance of [Claude Code](https://claude.com/claude-code).
-
-The logo is designed
-by [Jaycawn](https://github.com/Jaycawn) ([#5](https://github.com/EchoEllet/Controlify/issues/5))
 
 ## ⚠️ Disclaimer
 
 > **This mod is NOT AN OFFICIAL MINECRAFT PRODUCT.  
 > It is NOT APPROVED BY OR ASSOCIATED WITH MOJANG OR MICROSOFT.**
 >
-> **This port is not affiliated with the Controlify project authors OR [**isXander**](https://github.com/isXander).**
+> **This fork is not affiliated with the Controlify project authors, EchoEllet, OR [**isXander**](https://github.com/isXander).**
 
 ## 📜 License
 
@@ -101,4 +97,4 @@ The [original Controlify project license](https://github.com/isXander/Controlify
 
 This branch was created
 from [this Controlify commit](https://github.com/isXander/Controlify/commit/b468effcc388ccf6fd9d50e64d9e180f327fca53)
-with changes for Forge 1.20.1.
+with changes for Forge 1.20.1, forked from [EchoEllet/Controlify](https://github.com/EchoEllet/Controlify).
