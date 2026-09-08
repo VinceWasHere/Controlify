@@ -13,6 +13,24 @@ platform.
 > this backport does **not** support on-screen Controlify data-driven button guides,  
 > as it is an unofficial backport of an older Controlify version.
 
+## 🔀 About This Fork
+
+Yes, this is a fork of a fork: [**isXander**](https://github.com/isXander) created and maintains the
+original [Controlify](https://github.com/isXander/Controlify) for Fabric/NeoForge, [**EchoEllet**](https://github.com/EchoEllet)
+built and maintains [**Controlify: Forgified**](https://github.com/EchoEllet/Controlify) (the Forge 1.20.1 backport
+this repo is forked from), and this fork adds one feature on top of EchoEllet's Forge 1.20.1 port:
+
+- **48-slot radial menu, paged 12 at a time with LB/RB** (instead of a hard 8-slot limit), using the
+  `GUI_NEXT_TAB`/`GUI_PREV_TAB` bindings, which already worked on any screen so no new controller button was needed.
+- **Fix for a slot that could never actually be cleared** — the "empty" marker used to save a slot and the one used
+  to display it didn't match, and the edit menu never offered an "empty" option to begin with.
+- Old 8-slot configs are migrated automatically to the new 48-slot layout, no reconfiguration needed.
+
+Written by [**Vincent**](https://github.com/VinceWasHere), reverse-engineering the mod's radial menu with the
+assistance of [Claude Code](https://claude.com/claude-code), and offered back to isXander and EchoEllet in case it's
+useful upstream. See the [`radial-x48` branch](https://github.com/VinceWasHere/Controlify/tree/radial-x48) for the
+full patch, and [Releases](https://github.com/VinceWasHere/Controlify/releases) for a ready-to-install build.
+
 ## 📦 **Required Dependencies**
 
 Make sure you have these mods installed:
@@ -60,6 +78,12 @@ though support will eventually end once most mods move to NeoForge.
 
 This project is an **unofficial backport** based on the original work by [**isXander**](https://github.com/isXander).  
 Without their valuable work, this port would not exist.
+
+The Forge 1.20.1 backport this repo is forked from is built and maintained
+by [**EchoEllet**](https://github.com/EchoEllet) at [EchoEllet/Controlify](https://github.com/EchoEllet/Controlify).
+
+The 48-slot paginated radial menu in this fork was written
+by [**Vincent**](https://github.com/VinceWasHere), with the assistance of [Claude Code](https://claude.com/claude-code).
 
 The logo is designed
 by [Jaycawn](https://github.com/Jaycawn) ([#5](https://github.com/EchoEllet/Controlify/issues/5))
