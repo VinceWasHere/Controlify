@@ -477,6 +477,7 @@
   "controlify.calibration.later.tooltip": "You must calibrate to use the controller. Pressing this will deactivate the controller and you will have to use it again to calibrate.",
 
   "controlify.radial_menu.configure_hint": "Configure actions in the controller settings.",
+  "controlify.radial.empty": "- Empty -",
   "controlify.radial.hotbar": "Slot %s",
   "controlify.radial.hotbar_save_hint": "Save your hotbar slots.",
   "controlify.radial.hotbar_load_hint": "Load your hotbar slots.",

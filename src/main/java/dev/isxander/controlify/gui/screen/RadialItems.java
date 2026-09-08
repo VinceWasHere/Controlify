@@ -23,10 +23,13 @@ import java.util.function.Supplier;
 public final class RadialItems {
     public static final RadialMenuScreen.RadialItem EMPTY_ACTION = new RadialItemRecord(Component.empty(), RadialIcon.EMPTY, () -> false, RadialIcons.EMPTY);
 
-    public static RadialMenuScreen.RadialItem[] createBindings(ControllerEntity controller) {
-        RadialMenuScreen.RadialItem[] items = new RadialMenuScreen.RadialItem[8];
+    // Total radial slots across all pages (4 pages x RadialMenuScreen.PAGE_SIZE).
+    public static final int RADIAL_SLOTS = 48;
 
-        for (int i = 0; i < 8; i++) {
+    public static RadialMenuScreen.RadialItem[] createBindings(ControllerEntity controller) {
+        RadialMenuScreen.RadialItem[] items = new RadialMenuScreen.RadialItem[RADIAL_SLOTS];
+
+        for (int i = 0; i < RADIAL_SLOTS; i++) {
             ResourceLocation bindingId = controller.input().orElseThrow().confObj().radialActions[i];
 
             items[i] = getItemForBinding(bindingId, controller);
@@ -283,6 +286,10 @@ public final class RadialItems {
     }
 
     private static RadialMenuScreen.RadialItem getItemForBinding(ResourceLocation id, ControllerEntity controller) {
+        if (RadialMenuScreen.EMPTY_ACTION.equals(id)) {
+            return EMPTY_ACTION;
+        }
+
         InputBinding binding = controller.input().orElseThrow().getBinding(id);
 
         if (binding == null || binding.radialIcon().isEmpty()) {
@@ -382,6 +389,9 @@ public final class RadialItems {
         @Override
         public List<RadialMenuScreen.RadialItem> getEditCandidates() {
             List<RadialMenuScreen.RadialItem> items = new ArrayList<>();
+
+            // Lets players clear a slot back to empty, which stock candidates never offered.
+            items.add(new RadialItemRecord(Component.translatable("controlify.radial.empty"), RadialIcon.EMPTY, () -> false, RadialMenuScreen.EMPTY_ACTION));
 
             controller.input().orElseThrow().getAllBindings().forEach(binding -> {
                 binding.radialIcon().ifPresent(icon -> {

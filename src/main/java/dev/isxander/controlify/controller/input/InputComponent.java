@@ -16,6 +16,7 @@ import dev.isxander.controlify.controller.serialization.IConfig;
 import dev.isxander.controlify.controller.input.mapping.ControllerMapping;
 import dev.isxander.controlify.controller.impl.ConfigImpl;
 import dev.isxander.controlify.controller.input.mapping.ControllerMappingStorage;
+import dev.isxander.controlify.gui.screen.RadialItems;
 import dev.isxander.controlify.gui.screen.RadialMenuScreen;
 import dev.isxander.controlify.utils.CUtil;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -230,7 +231,7 @@ public class InputComponent implements ECSComponent, ConfigHolder<InputComponent
 
         public boolean keepDefaultBindings = false;
 
-        public ResourceLocation[] radialActions = new ResourceLocation[8];
+        public ResourceLocation[] radialActions = new ResourceLocation[RadialItems.RADIAL_SLOTS];
         public int radialButtonFocusTimeoutTicks = 20;
 
         @Nullable
@@ -238,7 +239,16 @@ public class InputComponent implements ECSComponent, ConfigHolder<InputComponent
 
         @Override
         public void onConfigSaveLoad(ControllerEntity controller) {
+            this.migrateRadialActions();
             this.validateRadialActions(controller);
+        }
+
+        // Expands configs saved by older versions (8 radial slots) up to the current
+        // slot count; new slots default to empty rather than repeating old bindings.
+        private void migrateRadialActions() {
+            if (radialActions.length < RadialItems.RADIAL_SLOTS) {
+                radialActions = Arrays.copyOf(radialActions, RadialItems.RADIAL_SLOTS);
+            }
         }
 
         private void validateRadialActions(ControllerEntity controller) {

@@ -46,6 +46,9 @@ import java.util.Optional;
 
 public class RadialMenuScreen extends Screen implements ScreenControllerEventListener, ScreenProcessorProvider {
     public static final ResourceLocation EMPTY_ACTION = CUtil.rl("empty_action");
+    // How many actions are shown on the wheel at once. `items` can hold more than this
+    // (see RadialItems.RADIAL_SLOTS) and is paged through PAGE_SIZE at a time with LB/RB.
+    public static final int PAGE_SIZE = 12;
 
     private final ControllerEntity controller;
     private final @Nullable EditMode editMode;
@@ -54,6 +57,9 @@ public class RadialMenuScreen extends Screen implements ScreenControllerEventLis
 
     private final RadialItem[] items;
     private final RadialButton[] buttons;
+    private final int pageSize;
+    private final int pageCount;
+    private int page;
     private float radialRadius;
 
     private final InputBinding openBind;
@@ -72,11 +78,58 @@ public class RadialMenuScreen extends Screen implements ScreenControllerEventLis
         this.text = text;
         this.controller = controller;
         this.items = items;
-        this.buttons = new RadialButton[items.length];
+        // The edit screen always shows every page so every slot can be filled. In game, paging
+        // stops at the last occupied slot, so trailing empty pages are never navigated to.
+        int visible = editMode != null ? items.length : usedSlots(items);
+        this.pageSize = visible > PAGE_SIZE ? PAGE_SIZE : Math.max(visible, 1);
+        this.pageCount = Math.max(1, (visible + this.pageSize - 1) / this.pageSize);
+        this.buttons = new RadialButton[this.pageSize];
         this.editMode = editMode;
         this.parent = parent;
         this.idleTicksTimeout = controller.input().orElseThrow().confObj().radialButtonFocusTimeoutTicks;
         this.openBind = openBind;
+    }
+
+    private static int usedSlots(RadialItem[] items) {
+        int last = -1;
+        for (int i = 0; i < items.length; i++) {
+            if (items[i] != null && !RadialItems.EMPTY_ACTION.equals(items[i])) {
+                last = i;
+            }
+        }
+        return last + 1;
+    }
+
+    // Maps a visible button slot on the current page to its index in `items`.
+    private int globalIndex(int slot) {
+        return page * pageSize + slot;
+    }
+
+    private int indexOf(RadialButton button) {
+        for (int i = 0; i < buttons.length; i++) {
+            if (buttons[i] == button) return i;
+        }
+        return -1;
+    }
+
+    private RadialItem itemAt(int slot) {
+        int index = globalIndex(slot);
+        return index >= 0 && index < items.length ? items[index] : RadialItems.EMPTY_ACTION;
+    }
+
+    // Re-labels the existing buttons instead of rebuilding the screen, so paging is instant.
+    private void changePage(int delta) {
+        if (pageCount <= 1) return;
+        int newPage = Math.floorMod(page + delta, pageCount);
+        if (newPage == page) return;
+        page = newPage;
+
+        for (int i = 0; i < buttons.length; i++) {
+            buttons[i].setAction(itemAt(i));
+        }
+
+        minecraft.getSoundManager().play(SimpleSoundInstance.forUI(ControlifyClientSounds.SCREEN_FOCUS_CHANGE.get(), 1f));
+        controller.hdHaptics().ifPresent(haptics -> haptics.playHaptic(HapticEffects.NAVIGATE));
     }
 
     @Override
@@ -89,18 +142,23 @@ public class RadialMenuScreen extends Screen implements ScreenControllerEventLis
         // r = sqrt(w^2 + h^2) / 2
         float buttonRadius = (float) Math.sqrt(32 * 32 + 32 * 32) + 8;
         // add the amount of radii together to create the circumference of the circle they all fit around
-        float circumference = buttonRadius * items.length;
+        // sized off the current page, not the full action count, so paging doesn't change the wheel's scale
+        float circumference = buttonRadius * pageSize;
         // c = 2 * pi * r
         radialRadius = Math.max(circumference / Mth.TWO_PI, 43);
+        // 12 buttons make for a noticeably bigger wheel than the original 8; keep it on screen
+        // in small windows or at a high GUI scale.
+        float maxRadius = Math.min(width, height) / 2f - 44;
+        radialRadius = Math.min(radialRadius, Math.max(43, maxRadius));
 
         Animation animation = Animation.of(5)
                 .easing(EasingFunction.EASE_OUT_QUAD);
-        for (int i = 0; i < items.length; i++) {
-            float angle = Mth.TWO_PI * i / items.length - (90 * Mth.DEG_TO_RAD);
+        for (int i = 0; i < pageSize; i++) {
+            float angle = Mth.TWO_PI * i / pageSize - (90 * Mth.DEG_TO_RAD);
             float x = centerX + Mth.cos(angle) * radialRadius;
             float y = centerY + Mth.sin(angle) * radialRadius;
 
-            RadialButton button = buttons[i] = new RadialButton(items[i], centerX - 16, centerY - 16);
+            RadialButton button = buttons[i] = new RadialButton(itemAt(i), centerX - 16, centerY - 16);
 
             animation
                     .consumerF(button::setX, centerX - 16, x - 16)
@@ -135,16 +193,31 @@ public class RadialMenuScreen extends Screen implements ScreenControllerEventLis
         if (this.controller != controller) return;
 
         if (editMode == null && !openBind.digitalNow()) {
+            // Some actions open their own screen (nested radials: hotbar select, debug, game
+            // mode...). Closing this radial on top of that would instantly dismiss it again, so
+            // only close if the action didn't already change the screen.
+            Screen previousScreen = minecraft.screen;
             if (selectedButton != -1 && buttons[selectedButton].invoke()) {
                 playClickSound();
             }
 
-            onClose();
+            if (minecraft.screen == previousScreen) {
+                onClose();
+            }
         }
 
         if (editMode != null && ControlifyBindings.GUI_BACK.on(controller).justPressed()) {
             playClickSound();
             onClose();
+        }
+
+        // LB/RB already have ANY_SCREEN context, so they're live here without costing a button.
+        if (!isEditing && pageCount > 1) {
+            if (ControlifyBindings.GUI_NEXT_TAB.on(controller).justPressed()) {
+                changePage(1);
+            } else if (ControlifyBindings.GUI_PREV_TAB.on(controller).justPressed()) {
+                changePage(-1);
+            }
         }
 
         if (!isEditing) {
@@ -207,6 +280,16 @@ public class RadialMenuScreen extends Screen implements ScreenControllerEventLis
                     height - 39,
                     -1
             );
+        }
+
+        if (pageCount > 1) {
+            Component indicator = Component.empty()
+                    .append(ControlifyBindings.GUI_PREV_TAB.on(controller).inputIcon())
+                    .append("  " + (page + 1) + " / " + pageCount + "  ")
+                    .append(ControlifyBindings.GUI_NEXT_TAB.on(controller).inputIcon());
+            // Drawn inside the wheel, under the focused action's name, so it never overlaps the
+            // buttons below or the GUI_BACK guide shown in edit mode.
+            graphics.drawCenteredString(font, indicator, width / 2, height / 2 + 26, -1);
         }
     }
 
@@ -343,9 +426,16 @@ public class RadialMenuScreen extends Screen implements ScreenControllerEventLis
         @Override
         public boolean overrideControllerButtons(ScreenProcessor<?> screen, ControllerEntity controller) {
             if (editMode != null && controller == RadialMenuScreen.this.controller && ControlifyBindings.GUI_PRESS.on(controller).justPressed()) {
-                RadialButton button = buttons[selectedButton];
+                // Edit whichever button actually received the press, rather than trusting
+                // selectedButton. Equivalent in normal use, but avoids an
+                // ArrayIndexOutOfBoundsException if focus lands on a button without the stick
+                // having moved (selectedButton left at -1).
+                int slot = indexOf(this);
+                if (slot < 0) return false;
+
+                RadialButton button = buttons[slot];
                 int x = button.x < width / 2 ? button.x - 110 : button.x + 42;
-                actionSelectList = new ActionSelectList(selectedButton, x, button.y, 100, 80);
+                actionSelectList = new ActionSelectList(globalIndex(slot), slot, x, button.y, 100, 80);
                 addRenderableWidget(actionSelectList);
                 RadialMenuScreen.this.setFocused(actionSelectList);
                 isEditing = true;
@@ -371,7 +461,10 @@ public class RadialMenuScreen extends Screen implements ScreenControllerEventLis
     }
 
     public class ActionSelectList implements Renderable, ContainerEventHandler, NarratableEntry, ComponentProcessor {
+        // radialIndex is the GLOBAL index into `items` (page * pageSize + slot);
+        // localIndex is which button on the currently visible wheel opened this list.
         private final int radialIndex;
+        private final int localIndex;
 
         private int x, y;
         private int width, height;
@@ -383,8 +476,9 @@ public class RadialMenuScreen extends Screen implements ScreenControllerEventLis
 
         private final List<ActionEntry> children = new ArrayList<>();
 
-        public ActionSelectList(int index, int x, int y, int width, int height) {
+        public ActionSelectList(int index, int localIndex, int x, int y, int width, int height) {
             this.radialIndex = index;
+            this.localIndex = localIndex;
             this.x = x;
             this.y = y;
             this.width = width;
@@ -534,7 +628,10 @@ public class RadialMenuScreen extends Screen implements ScreenControllerEventLis
                         editMode.setRadialItem(radialIndex, item);
                         Controlify.instance().config().setDirty();
 
-                        buttons[radialIndex].setAction(item);
+                        // radialIndex is global (across all pages); buttons[] only holds the
+                        // currently visible page, so the freshly assigned action must be
+                        // reflected onto the button at localIndex instead.
+                        buttons[localIndex].setAction(item);
 
                         playClickSound();
                         finishEditing();
